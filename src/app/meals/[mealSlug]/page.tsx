@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
-import { getMeal } from "@/lib/meal";
+import { getMeal, getMeals } from "@/lib/meal";
 import classes from "./page.module.css";
 
 interface Meal {
@@ -11,6 +11,13 @@ interface Meal {
   instructions: string;
   creator: string;
   creator_email: string;
+}
+
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const meals = await getMeals();
+  return meals.map((m: any) => ({ mealSlug: m.slug }));
 }
 
 export default async function MealDetailsPage({
@@ -44,10 +51,8 @@ export default async function MealDetailsPage({
       <main>
         <p
           className={classes.instructions}
-          dangerouslySetInnerHTML={{
-            __html: meal.instructions,
-          }}
-        ></p>
+          dangerouslySetInnerHTML={{ __html: meal.instructions }}
+        />
       </main>
     </>
   );
