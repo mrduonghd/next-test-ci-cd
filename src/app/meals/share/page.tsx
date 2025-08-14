@@ -1,13 +1,32 @@
 "use client";
 
 import ImagePicker from "@/components/meals/image-picker";
-import MealsFormSubmit from "@/components/meals/meals-form-submit";
-import { shareMeal } from "@/lib/actions";
 import classes from "./page.module.css";
-import { useActionState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ShareMealPage() {
-    const [state, formAction] = useActionState(shareMeal, { message: "" });
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setPending(true);
+    setMessage("");
+
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+
+    const res = await fetch("/api/meals", { method: "POST", body: fd });
+    if (res.ok) {
+      router.push("/meals");
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
+    setMessage(data?.message || "Submit failed.");
+    setPending(false);
+  }
 
   return (
     <>
@@ -18,7 +37,7 @@ export default function ShareMealPage() {
         <p>Or any other meal you feel needs sharing!</p>
       </header>
       <main className={classes.main}>
-        <form className={classes.form} action={formAction}>
+        <form className={classes.form} onSubmit={onSubmit}>
           <div className={classes.row}>
             <p>
               <label htmlFor="name">Your name</label>
@@ -39,17 +58,12 @@ export default function ShareMealPage() {
           </p>
           <p>
             <label htmlFor="instructions">Instructions</label>
-            <textarea
-              id="instructions"
-              name="instructions"
-              rows={10}
-              required
-            ></textarea>
+            <textarea id="instructions" name="instructions" rows={10} required></textarea>
           </p>
           <ImagePicker label="Your image" name="image" />
-          {state.message && <p>{state.message}</p>}
+          {message && <p>{message}</p>}
           <p className={classes.actions}>
-            <MealsFormSubmit />
+            <button disabled={pending}>{pending ? "Submitting..." : "Share Meal"}</button>
           </p>
         </form>
       </main>
